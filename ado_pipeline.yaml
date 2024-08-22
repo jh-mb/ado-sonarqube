@@ -1,0 +1,61 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  NODE_VERSION: '18.x'  # Versión de Node.js que deseas utilizar
+  SONARQUBE_ENDPOINT: 'SonarQube'  # Nombre del servicio SonarQube configurado en Azure DevOps
+  SONARQUBE_PROJECT_KEY: 'your-project-key'  # Reemplaza con tu clave de proyecto de SonarQube
+
+stages:
+  - stage: InstallAndTest
+    jobs:
+      - job: InstallDependenciesAndRunTests
+        displayName: 'Instalar dependencias y ejecutar pruebas'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+            displayName: 'Usar Node.js $(NODE_VERSION)'
+
+          - script: npm install
+            displayName: 'Instalar dependencias'
+
+          - script: npm test
+            displayName: 'Ejecutar pruebas'
+
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFiles: '**/TEST-*.xml'
+              testRunTitle: 'Resultados de pruebas unitarias'
+            condition: succeededOrFailed()
+            displayName: 'Publicar resultados de las pruebas'
+
+  - stage: SonarQubeAnalysis
+    dependsOn: InstallAndTest
+    condition: succeededOrFailed()
+    jobs:
+      - job: RunSonarQubeAnalysis
+        displayName: 'Ejecutar análisis de SonarQube'
+        steps:
+          - task: SonarQubePrepare@5
+            inputs:
+              SonarQube: $(SONARQUBE_ENDPOINT)
+              scannerMode: 'CLI'
+              configMode: 'manual'
+              cliProjectKey: $(SONARQUBE_PROJECT_KEY)
+              cliProjectName: 'Node SonarQube Project'
+              cliSources: '.'
+
+          - script: npm run test
+            displayName: 'Ejecutar pruebas para análisis de SonarQube'
+
+          - task: SonarQubeAnalyze@5
+            displayName: 'Analizar con SonarQube'
+
+          - task: SonarQubePublish@5
+            inputs:
+              pollingTimeoutSec: '300'
+            displayName: 'Publicar resultados en SonarQube'
