@@ -1,13 +1,12 @@
 trigger:
-- main
+- master
 
 pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  NODE_VERSION: '18.x'  # Versión de Node.js que deseas utilizar
-  SONARQUBE_ENDPOINT: 'SonarQube'  # Nombre del servicio SonarQube configurado en Azure DevOps
-  SONARQUBE_PROJECT_KEY: 'your-project-key'  # Reemplaza con tu clave de proyecto de SonarQube
+  NODE_VERSION: '18'  # Versión de Node.js que deseas utilizar
+  SONARQUBE_ENDPOINT: 'sonarqube'  # Nombre del servicio SonarQube configurado en Azure DevOps
 
 stages:
   - stage: InstallAndTest
@@ -44,11 +43,8 @@ stages:
             inputs:
               SonarQube: $(SONARQUBE_ENDPOINT)
               scannerMode: 'CLI'
-              configMode: 'manual'
-              cliProjectKey: $(SONARQUBE_PROJECT_KEY)
-              cliProjectName: 'Node SonarQube Project'
-              cliSources: '.'
-
+              configMode: 'file' # Indica que se usará el archivo sonar-project.properties
+              
           - script: npm run test
             displayName: 'Ejecutar pruebas para análisis de SonarQube'
 
