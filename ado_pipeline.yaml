@@ -2,7 +2,7 @@ trigger:
 - master
 
 pool:
-  name: Default
+  vmImage: 'ubuntu-latest'
 
 variables:
   NODE_VERSION: '18'  # Versión de Node.js que deseas utilizar
